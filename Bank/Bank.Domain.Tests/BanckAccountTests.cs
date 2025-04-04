@@ -1,5 +1,6 @@
 using Bank.Domain.Models;
 using NUnit.Framework;
+using Assert = NUnit.Framework.Assert; // CORRECCIÓN: Especificar la referencia a NUnit para evitar ambigüedad
 
 namespace Bank.Domain.Tests
 {
@@ -13,13 +14,17 @@ namespace Bank.Domain.Tests
             double debitAmount = 4.55;
             double expected = 7.44;
             BankAccount account = new BankAccount("Mr. Bryan Walton", beginningBalance);
+            
             // Act
             account.Debit(debitAmount);
+            
             // Assert
             double actual = account.Balance;
-            Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual(expected, actual, 0.001, "Account not debited correctly");
+            
+            Assert.That(actual, Is.EqualTo(expected).Within(0.001), "Account not debited correctly");
         }
-         [Test]
+
+        [Test]
         public void Credit_WithValidAmount_UpdatesBalance()
         {
             // Arrange
@@ -33,7 +38,32 @@ namespace Bank.Domain.Tests
             
             // Assert
             double actual = account.Balance;
-            Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual(expected, actual, 0.001, "Account not credited correctly");
+            
+            Assert.That(actual, Is.EqualTo(expected).Within(0.001), "Account not credited correctly");
+        }
+
+        [Test]
+        public void Debit_WithAmountGreaterThanBalance_ThrowsException()
+        {
+            // CORRECCIÓN: Prueba agregada para validar excepción cuando el débito es mayor que el saldo
+            BankAccount account = new BankAccount("Mr. Bryan Walton", 11.99);
+            Assert.Throws<ArgumentOutOfRangeException>(() => account.Debit(20.00));
+        }
+
+        [Test]
+        public void Debit_WithNegativeAmount_ThrowsException()
+        {
+            // CORRECCIÓN: Prueba agregada para validar excepción cuando el débito es negativo
+            BankAccount account = new BankAccount("Mr. Bryan Walton", 11.99);
+            Assert.Throws<ArgumentOutOfRangeException>(() => account.Debit(-5.00));
+        }
+
+        [Test]
+        public void Credit_WithNegativeAmount_ThrowsException()
+        {
+            // CORRECCIÓN: Prueba agregada para validar excepción cuando el crédito es negativo
+            BankAccount account = new BankAccount("Mr. Bryan Walton", 11.99);
+            Assert.Throws<ArgumentOutOfRangeException>(() => account.Credit(-5.00));
         }
     }
 }
