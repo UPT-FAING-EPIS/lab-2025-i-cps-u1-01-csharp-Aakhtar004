@@ -1,0 +1,1 @@
+MR7C:\WINDOWS\system32\Bank\Bank.Domain\Bank.Domain.csproj¢net8.0òCSharp12
