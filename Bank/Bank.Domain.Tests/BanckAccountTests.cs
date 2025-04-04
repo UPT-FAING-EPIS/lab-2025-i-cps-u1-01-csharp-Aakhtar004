@@ -8,7 +8,7 @@ namespace Bank.Domain.Tests
         [Test]
         public void Debit_WithValidAmount_UpdatesBalance()
         {
-            // Arrange
+            // Arrange EJM2
             double beginningBalance = 11.99;
             double debitAmount = 4.55;
             double expected = 7.44;
