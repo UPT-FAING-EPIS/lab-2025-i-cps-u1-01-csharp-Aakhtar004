@@ -1,8 +1,8 @@
 name: Sonar Continuous Integration and NuGet Publishing
 env:
   DOTNET_VERSION: '8.0'                     # la versión de .NET
-  SONAR_ORG: 'renzoantayhua'                    # Nombre de la organización de sonar cloud
-  SONAR_PROJECT: 'RenzoAntayhua_lab-2025-i-cps-u1-01-csharp-RenzoAntayhua'        # Key ID del proyecto de sonar
+  SONAR_ORG: 'apibank89'                    # Nombre de la organización de sonar cloud
+  SONAR_PROJECT: 'apibank89_apibank'        # Key ID del proyecto de sonar
 on:
   push:
     branches: [ "main" ] #
