@@ -1,0 +1,68 @@
+name: Sonar Continuous Integration and NuGet Publishing
+env:
+  DOTNET_VERSION: '8.0'                     # la versión de .NET
+  SONAR_ORG: 'renzoantayhua'                    # Nombre de la organización de sonar cloud
+  SONAR_PROJECT: 'RenzoAntayhua_lab-2025-i-cps-u1-01-csharp-RenzoAntayhua'        # Key ID del proyecto de sonar
+on:
+  push:
+    branches: [ "main" ] #
+  workflow_dispatch:
+
+jobs:
+  sonarqube:
+    name: Sonarqube Analysis and NuGet Publishing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Configurando la versión de NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Instalar Scanner
+        run: dotnet tool install -g dotnet-sonarscanner
+      - name: Restaurar dependencias
+        run: dotnet restore "Bank/Bank.sln"
+      - name: Ejecutar pruebas
+        run: dotnet test "Bank/Bank.sln" --collect:"XPlat Code Coverage;Format=opencover"
+      - name: Iniciar análisis SonarQube
+        run: dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT }}" /o:"${{ env.SONAR_ORG }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="Bank/**/coverage.opencover.xml" /d:sonar.qualitygate.wait=true
+      - name: Compilar solución
+        run: dotnet build "Bank/Bank.sln"
+      - name: Finalizar análisis SonarQube
+        run: |
+          dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+      - name: Crear paquete NuGet
+        run: |
+          dotnet pack "Bank/Bank.sln" --configuration Release --output ./packages
+      - name: Publicar paquete en GitHub Packages
+        run: |
+          dotnet nuget push ./packages/*.nupkg --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --api-key ${{ secrets.GH_TOKEN }} --skip-duplicate
+  release:
+    name: Generar Release en GitHub
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generar tag dinámico
+        id: generate_tag
+        run: echo "TAG_NAME=release-$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
+      - name: Obtener notas de los commits
+        id: changelog
+        run: |
+          echo "## Cambios en la versión ${{ env.TAG_NAME }}" > release_notes.md
+          git log --pretty=format:"- %s" -n 10 >> release_notes.md
+      - name: Crear nuevo tag
+        run: |
+          git tag ${{ env.TAG_NAME }}
+          git push origin ${{ env.TAG_NAME }}
+      - name: Crear Release en GitHub
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.TAG_NAME }}
+          name: "Release ${{ env.TAG_NAME }}"
+          bodyFile: "release_notes.md"
+          token: ${{ secrets.GH_TOKEN }}
+          replacesArtifacts: true
